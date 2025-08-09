@@ -1,16 +1,37 @@
 from util import *
 import matplotlib.pyplot as plt
-import cv2
 import pytesseract
-import math
 from PIL import ImageFilter, Image
 
 class Game:
 	def __init__(self):
-		pytesseract.pytesseract.tesseract_cmd = r'C:\Users\kevlu8\AppData\Local\Programs\Tesseract-OCR\tesseract.exe'
+		# pytesseract.pytesseract.tesseract_cmd = r'C:\Users\kevlu8\AppData\Local\Programs\Tesseract-OCR\tesseract.exe'
+		# ^ Only uncomment if your tesseract is NOT installed to PATH
+		pass
+	
+	frames_dead = 0
+	frames_kill = 0
+
+	def died(self, scr):
+		if self.internal_died(scr):
+			self.frames_dead += 1
+			if self.frames_dead > 3:
+				return True
+		else:
+			self.frames_dead = 0
+		return False
+	
+	def kill(self, scr):
+		if self.internal_kill(scr):
+			self.frames_kill += 1
+			if self.frames_kill > 3:
+				return True
+		else:
+			self.frames_kill = 0
+		return False
 
 	# check if player just died
-	def died(self, scr):
+	def internal_died(self, scr):
 		# 1. crop to the health hud
 		w = scr.width
 		h = scr.height
@@ -47,11 +68,8 @@ class Game:
 		crop.putdata(new_data)
 		crop = crop.resize((crop.width * 4, crop.height * 4), resample=Image.Resampling.BILINEAR)
 		crop = crop.filter(ImageFilter.GaussianBlur(radius=3))
-		plt.imshow(crop)
-		plt.show()
 		# 9. OCR
 		text = pytesseract.image_to_string(crop)
-		print(text)
 		# 10. if we're alive, the text should contain a number 1-100
 		ammoVerdict = any(char.isdigit() for char in text)
 		return not healthVerdict and not ammoVerdict # if both are false, we're (probably) dead
@@ -67,7 +85,7 @@ class Game:
 		return "switch player" in text.lower()
 
 	# check if player just got a kill
-	def kill(self, scr):
+	def internal_kill(self, scr):
 		# 1. get the kill icon area
 		w = scr.width
 		h = scr.height

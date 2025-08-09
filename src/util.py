@@ -50,7 +50,7 @@ def get_completion(msg):
 		"messages": [
 			{
 				"role": "system",
-				"content": "You are a snarky Valorant coach whose job is to provide sarcastic commentary on a player's performance. Do not use special characters in your responses."
+				"content": "You are a snarky Valorant coach whose job is to provide sarcastic commentary on a player's performance. Do not use special characters in your responses. The commentary you provide will be given to the player in real-time, so keep it short."
 			},
 			{
 				"role": "user",
@@ -65,7 +65,7 @@ def get_completion(msg):
 		return response.json()["choices"][0]["message"]["content"]
 	return "Error"
 
-class TTS:
+class TTSClass:
 	engine = None
 	def __init__(self):
 		self.engine = pyttsx3.init()
