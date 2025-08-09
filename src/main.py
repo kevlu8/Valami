@@ -28,18 +28,19 @@ def main():
 			continue # don't pick up events while dead (since we're spectating another player)
 		if game.died(scr):
 			say(get_completion(death_prompt))
+			# scr.save(f"{random.randint(0, 10000)}.png")
 		elif game.kill(scr):
 			say(get_completion(kill_prompt))
 
 		time.sleep(0.05)
 
 def debug():
-	img = Image.open("kill.png")
+	img = Image.open("nokill2.png")
 	print(game.died(img))
 	sys.exit(0)
 
 if __name__ == "__main__":
-	# debug()
+	debug()
 	
 	print("switch to the game, fast!")
 	time.sleep(5)

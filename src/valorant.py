@@ -14,13 +14,13 @@ class Game:
 		# 1. crop to the health hud
 		w = scr.width
 		h = scr.height
-		crop = scr.crop((w * 0.30, h * 0.92, w * 0.34, h * 0.98))
-		# 2. preserve only white -> i.e. r,g,b > 100, range(r,g,b) < 20
+		crop = scr.crop((w * 0.30, h * 0.93, w * 0.34, h * 0.97))
+		# 2. preserve only white -> i.e. r,g,b > 160, range(r,g,b) < 20
 		data = crop.getdata()
 		new_data = []
 		for item in data:
 			rgb = item[:-1]
-			if max(rgb) - min(rgb) < 8 and min(rgb) > 100:
+			if max(rgb) - min(rgb) < 8 and min(rgb) > 160:
 				new_data.append((255, 255, 255))
 			else:
 				new_data.append((0, 0, 0))
@@ -29,16 +29,32 @@ class Game:
 		crop = crop.resize((crop.width * 4, crop.height * 4), resample=Image.Resampling.BILINEAR)
 		# 4. blur
 		crop = crop.filter(ImageFilter.GaussianBlur(radius=3))
-
-		plt.imshow(crop)
-		plt.show()
 		# 5. OCR
 		text = pytesseract.image_to_string(crop)
-		print(text)
 		# 6. if we're alive, the text should contain a number 1-100
-		if any(char.isdigit() for char in text) and 0 <= int(text) <= 100:
-			return False
-		return True
+		healthVerdict = any(char.isdigit() for char in text)
+		# 7. crop to the ammo hud (in case the user is on left-handed mode; the health hud detection will be imprecise)
+		crop = scr.crop((w * 0.66, h * 0.93, w * 0.72, h * 0.97))
+		# 8. run the previous steps again
+		data = crop.getdata()
+		new_data = []
+		for item in data:
+			rgb = item[:-1]
+			if max(rgb) - min(rgb) < 8 and min(rgb) > 160:
+				new_data.append((255, 255, 255))
+			else:
+				new_data.append((0, 0, 0))
+		crop.putdata(new_data)
+		crop = crop.resize((crop.width * 4, crop.height * 4), resample=Image.Resampling.BILINEAR)
+		crop = crop.filter(ImageFilter.GaussianBlur(radius=3))
+		plt.imshow(crop)
+		plt.show()
+		# 9. OCR
+		text = pytesseract.image_to_string(crop)
+		print(text)
+		# 10. if we're alive, the text should contain a number 1-100
+		ammoVerdict = any(char.isdigit() for char in text)
+		return not healthVerdict and not ammoVerdict # if both are false, we're (probably) dead
 
 	# more generally, is true while the player is not alive
 	def is_dead(self, scr):
