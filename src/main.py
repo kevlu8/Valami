@@ -1,3 +1,4 @@
+from collections import deque
 from PIL import Image
 import matplotlib.pyplot as plt
 from valorant import *
@@ -5,57 +6,51 @@ import random
 import time
 from util import get_completion, TTSClass, capt_scr
 import sys
+import os
 
 game = Game()
 last_msg = 0
 
-# death_prompt = "You are watching a player play Valorant. The player has just died. Respond with a snarky remark in one sentence only."
-# kill_prompt = "You are watching a player play Valorant. The player has just killed an enemy. Respond with a snarky remark in one sentence only."
+death_prompt = "You are watching a player play Valorant. The player has just died. Give 5 snarky and sarcastic remarks that you would say."
+kill_prompt = "You are watching a player play Valorant. The player has just killed an enemy. Give 5 snarky and sarcastic remarks that you would say."
 
-death_phrases = [
-    "Nice try… if you were aiming at the wall.",
-    "Wow, that was fast. Did you blink?",
-    "You call that positioning?",
-    "They didn't even break a sweat.",
-    "Outplayed. Brutally.",
-    "And… you're gone.",
-    "That's one way to warm up the bench.",
-    "I've seen bots survive longer.",
-    "You really wanted to test the respawn screen, huh?",
-    "Hope your team's enjoying the 4v5."
-]
+death_files = deque()
+kill_files = deque()
 
-kill_phrases = [
-    "Wow… even a broken clock's right twice a day.",
-    "Pure luck. Don't kid yourself.",
-    "Congrats, you actually hit something.",
-    "Even I'm surprised that worked.",
-    "Was that skill or just panic?",
-    "Beginner's luck strikes again.",
-    "You aimed there on purpose… right?",
-    "Miracles do happen, apparently.",
-    "Mark the date, you landed a shot.",
-    "Don't get used to that."
-]
+tts = TTSClass()
 
-def say(msg):
-	global last_msg
-	if time.time() - last_msg < 3:
-		return
-	tts = TTSClass()
-	tts.start(msg)
-	del(tts)
-	last_msg = time.time()
+def recompute_deaths():
+	new_msgs = get_completion(death_prompt)
+	for msg in new_msgs.split("\n"):
+		idx = random.randint(0, 1000000)
+		death_files.append(f"death_{idx}.wav")
+		tts.into_file(msg, death_files[-1])
+
+def recompute_kills():
+	new_msgs = get_completion(kill_prompt)
+	for msg in new_msgs.split("\n"):
+		idx = random.randint(0, 1000000)
+		kill_files.append(f"kill_{idx}.wav")
+		tts.into_file(msg, kill_files[-1])
+
+def say(fidx):
+	tts.play_file(fidx)
+	os.remove(fidx)
 
 def main():
 	while True:
+		if len(death_files) < 2:
+			recompute_deaths()
+		if len(kill_files) < 2:
+			recompute_kills()
+
 		scr = capt_scr()
 		if game.is_dead(scr):
 			continue # don't pick up events while dead (since we're spectating another player)
 		if game.died(scr):
-			say(random.choice(death_phrases))
+			say(death_files.popleft())
 		elif game.kill(scr):
-			say(random.choice(kill_phrases))
+			say(kill_files.popleft())
 
 		time.sleep(0.05)
 

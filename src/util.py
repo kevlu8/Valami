@@ -1,9 +1,11 @@
 import numpy as np
 from PIL import ImageGrab
-import pyttsx3
 import cv2
 import matplotlib.pyplot as plt
 import requests
+import wave
+from piper import PiperVoice, SynthesisConfig
+import simpleaudio
 
 def capt_scr():
 	scr = ImageGrab.grab()
@@ -50,14 +52,14 @@ def get_completion(msg):
 		"messages": [
 			{
 				"role": "system",
-				"content": "You are a snarky Valorant coach whose job is to provide sarcastic commentary on a player's performance. Do not use special characters in your responses. The commentary you provide will be given to the player in real-time, so keep it short."
+				"content": "You are a snarky Valorant coach whose job is to provide sarcastic commentary on a player's performance. Avoid complimenting the player. Do not use special characters in your responses. The commentary you provide will be given to the player in real-time, so keep it short. Only respond with the requested phrases, separated by newlines. Do not format as a list or in quotations."
 			},
 			{
 				"role": "user",
 				"content": msg
 			}
 		],
-		"model": " meta-llama/llama-4-maverick-17b-128e-instruct",
+		"model": "qwen/qwen3-32b",
 		"include_reasoning": False,
 	}
 	response = requests.post("https://ai.hackclub.com/chat/completions", headers=headers, json=data)
@@ -67,8 +69,21 @@ def get_completion(msg):
 
 class TTSClass:
 	engine = None
+	syn_config = SynthesisConfig(
+		volume=0.8
+	)
 	def __init__(self):
-		self.engine = pyttsx3.init()
+		self.engine = PiperVoice.load("en_US-hfc_female-medium.onnx")
 	def start(self, msg):
-		self.engine.say(msg)
-		self.engine.runAndWait()
+		with wave.open("output.wav", "wb") as wf:
+			self.engine.synthesize_wav(msg, wf, syn_config=self.syn_config)
+		audio = simpleaudio.WaveObject.from_wave_file("output.wav")
+		play = audio.play()
+		play.wait_done()
+	def into_file(self, msg, filename):
+		with wave.open(filename, "wb") as wf:
+			self.engine.synthesize_wav(msg, wf, syn_config=self.syn_config)
+	def play_file(self, filename):
+		audio = simpleaudio.WaveObject.from_wave_file(filename)
+		play = audio.play()
+		play.wait_done()

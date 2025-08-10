@@ -1,4 +1,7 @@
 *.png
+death*
+kill*
+en_US*
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
